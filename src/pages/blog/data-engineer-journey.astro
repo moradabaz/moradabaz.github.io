@@ -1,0 +1,171 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('blog', ({ data }) => data.category === 'My Journey as a Data Engineer');
+const sortedPosts = posts.sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
+---
+
+<BaseLayout
+  title="My Journey as a Data Engineer | Morad Abaz"
+  description="A running log of real problems from day-to-day work as a Data Engineer: incidents, dead ends, and the small realizations that changed how I approach the job."
+>
+  <div class="container page-container">
+    <a href="/blog" class="back-link">← Back to Articles</a>
+
+    <div class="page-header">
+      <div class="badge badge-journal" style="margin-bottom: 0.8rem;">Journal · {sortedPosts.length} {sortedPosts.length === 1 ? 'entry' : 'entries'}</div>
+      <h1>My Journey as a <span class="gradient-text">Data Engineer</span></h1>
+      <p class="page-subtitle">
+        A running log of real problems from day-to-day work: incidents, dead ends, things that broke
+        in production, and the small realizations that changed how I approach the job. Less polished
+        than the technical series, more like notes from the field.
+      </p>
+    </div>
+
+    <ol class="timeline">
+      {sortedPosts.map(post => {
+        const formattedDate = post.data.pubDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+        return (
+          <li class="entry-item">
+            <div class="entry-marker" aria-hidden="true"></div>
+            <a href={`/blog/${post.slug}`} class="entry-link">
+              <span class="entry-date">{formattedDate}</span>
+              <h3 class="entry-title">{post.data.title}</h3>
+              <p class="entry-description">{post.data.description}</p>
+              <div class="entry-tags">
+                {post.data.tags.slice(0, 4).map((tag: string) => (
+                  <span class="badge">{tag}</span>
+                ))}
+              </div>
+            </a>
+          </li>
+        );
+      })}
+    </ol>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-container {
+    padding-top: 2.5rem;
+    padding-bottom: 5rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.8rem;
+    transition: color 0.2s ease;
+  }
+
+  .back-link:hover {
+    color: var(--accent-blue);
+  }
+
+  .badge-journal {
+    background: var(--text-main);
+    color: #ffffff;
+  }
+
+  .page-header {
+    margin-bottom: 2.5rem;
+    max-width: 780px;
+  }
+
+  .page-header h1 {
+    margin-bottom: 0.6rem;
+  }
+
+  .page-subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .timeline {
+    list-style: none;
+    position: relative;
+    padding-left: 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.28rem;
+    top: 0.4rem;
+    bottom: 0.4rem;
+    width: 2px;
+    background: var(--border-color);
+  }
+
+  .entry-item {
+    position: relative;
+  }
+
+  .entry-marker {
+    position: absolute;
+    left: -1.6rem;
+    top: 0.35rem;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 2px var(--border-color);
+  }
+
+  .entry-link {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 1.15rem 1.4rem;
+    color: inherit;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .entry-link:hover {
+    color: inherit;
+    transform: translateY(-2px);
+    border-color: var(--border-color-hover);
+    box-shadow: var(--shadow-hover);
+  }
+
+  .entry-date {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-bottom: 0.4rem;
+  }
+
+  .entry-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    line-height: 1.4;
+  }
+
+  .entry-description {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin-bottom: 0.6rem;
+  }
+
+  .entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+</style>

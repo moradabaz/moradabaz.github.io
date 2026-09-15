@@ -4,12 +4,13 @@ import BlogCard from '../../components/BlogCard.astro';
 import SeriesCard from '../../components/SeriesCard.astro';
 import { getCollection } from 'astro:content';
 
-const posts = await getCollection('blog', ({ data }) => data.category !== 'Spark Pills' && data.category !== 'Semantic Layer Pills' && data.category !== 'Streaming Pills');
+const posts = await getCollection('blog', ({ data }) => data.category !== 'Spark Pills' && data.category !== 'Semantic Layer Pills' && data.category !== 'Streaming Pills' && data.category !== 'My Journey as a Data Engineer');
 const sortedPosts = posts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 const sparkPillsCount = (await getCollection('blog', ({ data }) => data.category === 'Spark Pills')).length;
 const semanticLayerPillsCount = (await getCollection('blog', ({ data }) => data.category === 'Semantic Layer Pills')).length;
 const streamingPillsCount = (await getCollection('blog', ({ data }) => data.category === 'Streaming Pills')).length;
+const journeyEntriesCount = (await getCollection('blog', ({ data }) => data.category === 'My Journey as a Data Engineer')).length;
 
 // Collect all unique tags across all posts
 const allTags = ['All', ...Array.from(new Set(sortedPosts.flatMap(p => p.data.tags))).sort()];
@@ -76,6 +77,17 @@ const postsData = sortedPosts.map(p => ({
           description="Streaming is not fast batch. A series synthesized from Kleppmann's Designing Data-Intensive Applications: events vs messages, event time, logs vs queues, state, windows, late data, and streaming joins."
           count={streamingPillsCount}
           href="/blog/streaming-pills"
+        />
+      </div>
+      <div class="card-wrapper" data-tags={JSON.stringify(['Journal'])}>
+        <SeriesCard
+          title="My Journey as a Data Engineer"
+          description="A running log of real problems from day-to-day work: incidents, dead ends, things that broke in production, and the small realizations that changed how I approach the job."
+          count={journeyEntriesCount}
+          href="/blog/data-engineer-journey"
+          badgeLabel="Journal"
+          countLabel="entries"
+          footerLabel="Read the log →"
         />
       </div>
       {sortedPosts.map(post => (

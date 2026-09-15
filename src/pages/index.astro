@@ -7,11 +7,12 @@ import { fetchMediumPosts } from '../lib/medium';
 import { getCollection } from 'astro:content';
 
 const mediumPosts = await fetchMediumPosts();
-const localPosts = await getCollection('blog', ({ data }) => data.category !== 'Spark Pills' && data.category !== 'Semantic Layer Pills');
+const localPosts = await getCollection('blog', ({ data }) => data.category !== 'Spark Pills' && data.category !== 'Semantic Layer Pills' && data.category !== 'My Journey as a Data Engineer');
 const sortedLocalPosts = localPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 const sparkPillsCount = (await getCollection('blog', ({ data }) => data.category === 'Spark Pills')).length;
 const semanticLayerPillsCount = (await getCollection('blog', ({ data }) => data.category === 'Semantic Layer Pills')).length;
+const journeyEntriesCount = (await getCollection('blog', ({ data }) => data.category === 'My Journey as a Data Engineer')).length;
 ---
 
 <BaseLayout>
@@ -89,6 +90,15 @@ const semanticLayerPillsCount = (await getCollection('blog', ({ data }) => data.
           description="How much context does an LLM actually need to answer SQL questions correctly? A series built from a real dbt project and database: zero context, column descriptions, business logic, routing, and access control."
           count={semanticLayerPillsCount}
           href="/blog/semantic-layer-pills"
+        />
+        <SeriesCard
+          title="My Journey as a Data Engineer"
+          description="A running log of real problems from day-to-day work: incidents, dead ends, things that broke in production, and the small realizations that changed how I approach the job."
+          count={journeyEntriesCount}
+          href="/blog/data-engineer-journey"
+          badgeLabel="Journal"
+          countLabel="entries"
+          footerLabel="Read the log →"
         />
         {sortedLocalPosts.slice(0, 1).map(post => (
           <BlogCard post={post} />
