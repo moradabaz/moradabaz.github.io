@@ -1,5 +1,5 @@
 ---
-title: "How Important Is It to Use Your Software Engineering Skills in Data Engineering"
+title: "Going from Software Engineering Skills to Data Engineering"
 description: "After years as a backend developer following SOLID, DRY, and clean architecture, I moved into Data Engineering and quietly stopped being a software engineer. Here's how that happened, and what it took to notice."
 pubDate: 2026-09-15
 author: "Morad Abaz"
