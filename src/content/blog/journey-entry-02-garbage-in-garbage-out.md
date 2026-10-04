@@ -1,5 +1,5 @@
 ---
-title: "Building a Text-To-SQL Agent from Scratch: Garbage In, Garbage Out"
+title: "Building a Text-To-SQL Agent from Scratch: Dealing with messy data and metrics"
 description: "Part 1 of a diary series. I joined a company as a data engineer who knew Spark and little about the business, and this is the problem I found, the research I did and the plan for an agent that answers my team's data questions."
 pubDate: 2026-10-04
 author: "Morad Abaz"
