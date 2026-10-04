@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" font-family="system-ui, sans-serif">
+  <rect width="720" height="260" fill="#ffffff"/>
+  <text x="360" y="36" text-anchor="middle" font-size="18" font-weight="600" fill="#1f2937">"How many accounts churned last month?"</text>
+  <rect x="60" y="70" width="260" height="130" rx="12" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="190" y="102" text-anchor="middle" font-size="14" fill="#6b7280">Dashboard card</text>
+  <text x="190" y="160" text-anchor="middle" font-size="48" font-weight="700" fill="#1f2937">140</text>
+  <rect x="400" y="70" width="260" height="130" rx="12" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="530" y="102" text-anchor="middle" font-size="14" fill="#6b7280">Table the analyst queried</text>
+  <text x="530" y="160" text-anchor="middle" font-size="48" font-weight="700" fill="#2563eb">171</text>
+  <text x="360" y="142" text-anchor="middle" font-size="28" fill="#9ca3af">≠</text>
+  <text x="360" y="238" text-anchor="middle" font-size="12" fill="#9ca3af">Illustrative numbers. Both are defensible. Neither is wrong on its own terms.</text>
+</svg>

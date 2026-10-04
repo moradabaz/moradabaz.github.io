@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" font-family="system-ui, sans-serif">
+  <rect width="720" height="300" fill="#ffffff"/>
+  <g font-size="14" font-weight="600" fill="#1f2937" text-anchor="middle">
+    <text x="300" y="36">Finance</text><text x="460" y="36">Marketing</text><text x="620" y="36">Operations</text>
+  </g>
+  <g font-size="15" font-weight="600" fill="#1f2937">
+    <text x="30" y="100">Churn</text><text x="30" y="180">MRR</text><text x="30" y="260">NRR</text>
+  </g>
+  <g fill="#f3f4f6" stroke="#d1d5db">
+    <rect x="220" y="60" width="150" height="60" rx="8"/><rect x="380" y="60" width="150" height="60" rx="8"/><rect x="540" y="60" width="150" height="60" rx="8"/>
+    <rect x="220" y="140" width="150" height="60" rx="8"/><rect x="380" y="140" width="150" height="60" rx="8"/><rect x="540" y="140" width="150" height="60" rx="8"/>
+    <rect x="220" y="220" width="150" height="60" rx="8"/><rect x="380" y="220" width="150" height="60" rx="8"/><rect x="540" y="220" width="150" height="60" rx="8"/>
+  </g>
+  <g font-size="12" fill="#4b5563" text-anchor="middle">
+    <text x="295" y="95">no payment</text><text x="455" y="95">no activity</text><text x="615" y="95">channel closed</text>
+    <text x="295" y="175">subscription only</text><text x="455" y="175">incl. top-ups</text><text x="615" y="175">paid plans</text>
+    <text x="295" y="255">revenue-based</text><text x="455" y="255">MRR-based</text><text x="615" y="255">by quarter</text>
+  </g>
+  <text x="360" y="296" text-anchor="middle" font-size="11" fill="#9ca3af">Illustrative. Same word, a different question per team.</text>
+</svg>
