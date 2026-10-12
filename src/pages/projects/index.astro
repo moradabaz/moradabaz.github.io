@@ -1,0 +1,205 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const DASHBOARD_URL = 'https://pms-price-engine.duckdns.org';
+const GITHUB_URL = 'https://github.com/moradabaz/pms-price-engine';
+
+const HIGHLIGHTS = [
+  {
+    title: 'Watermarks and event time',
+    body: 'with_idleness for a single-partition source, the minimum rule across sources, allowed lateness with a side output for late data instead of silently dropping it.',
+  },
+  {
+    title: 'Exactly-once checkpointing',
+    body: 'Incremental RocksDB state, checkpoints persisted to S3 every 60s. The panel below reads the real state of the latest checkpoint via the Flink REST API.',
+  },
+  {
+    title: 'Keyed state with a computed TTL',
+    body: 'Deduplication with ValueState[bool] per booking_id, TTL = window size plus allowed lateness, not an arbitrary number.',
+  },
+  {
+    title: 'Async I/O enrichment',
+    body: 'AsyncDataStream.unordered_wait against price_decision to attach margin/profit without blocking the main pipeline.',
+  },
+  {
+    title: 'Spec-driven development',
+    body: 'Every phase has a spec, ADRs explaining the why behind each decision, and an audit diary of live verification, not just unit tests.',
+  },
+  {
+    title: 'Cost discipline in architecture',
+    body: 'Explicit decisions about what runs managed and what stays local (self-hosted Kafka/Flink vs. managed DynamoDB/S3/Kinesis) instead of defaulting everything to AWS.',
+  },
+];
+---
+
+<BaseLayout
+  title="Projects | Morad Abaz"
+  description="Side projects by Morad Abaz. PMS Price Engine: a dynamic pricing platform built with PyFlink, Kafka and exactly-once checkpointing, designed spec-first."
+>
+  <div class="container page-container">
+    <div class="page-header">
+      <div class="badge badge-purple" style="margin-bottom: 0.8rem;">Projects · Data Engineering</div>
+      <h1>My <span class="gradient-text">Projects</span></h1>
+      <p class="page-subtitle">
+        Things I build to learn by doing. Each one is a real system with a live demo and the
+        reasoning behind its decisions, not a tutorial copy.
+      </p>
+    </div>
+
+    <article class="project">
+      <div class="project-head">
+        <div class="badge badge-medium">Streaming · PyFlink · Kafka</div>
+        <h2>PMS Price Engine</h2>
+        <p class="project-lead">
+          A dynamic pricing engine for vacation rentals built to learn streaming for real:
+          PyFlink, Kafka, CDC with Debezium, keyed state, exactly-once checkpointing, and a
+          pipeline designed spec-first with ADRs and live auditing.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#demo">See the live demo</a>
+          <a class="btn btn-secondary" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">Code on GitHub</a>
+        </div>
+      </div>
+
+      <h3 class="section-title">What this project demonstrates</h3>
+      <div class="grid">
+        {HIGHLIGHTS.map((item) => (
+          <div class="glass-card card">
+            <h4>{item.title}</h4>
+            <p>{item.body}</p>
+          </div>
+        ))}
+      </div>
+
+      <h3 class="section-title">Architecture</h3>
+      <p class="section-intro">
+        CDC from Postgres via Debezium, two independent PyFlink jobs on the same cluster
+        (pricing and Market Pulse), DynamoDB as the hot path, and Apache Iceberg as the cold
+        path, transformed with dbt.
+      </p>
+      <img
+        src="/projects/pms-price-engine-architecture.png"
+        alt="PMS Price Engine architecture diagram"
+        class="architecture-diagram"
+        loading="lazy"
+      />
+
+      <h3 class="section-title" id="demo">Live dashboard</h3>
+      <p class="section-intro">
+        The "Market Pulse Job" panel shows the real state of the Flink job (status, latest
+        checkpoint) plus the 5-minute windowed metrics, read live from DynamoDB.
+      </p>
+      <div class="dashboard-frame">
+        <iframe src={DASHBOARD_URL} title="PMS Price Engine - Streamlit dashboard" loading="lazy"></iframe>
+      </div>
+      <p class="dashboard-fallback">
+        Not loading? The demo server is switched on on demand before each interview, reach
+        out and I'll start it, or check the code directly on
+        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-container {
+    padding-top: 3.5rem;
+    padding-bottom: 5rem;
+  }
+
+  .page-header {
+    margin-bottom: 2.5rem;
+    max-width: 780px;
+  }
+
+  .page-header h1 {
+    margin-bottom: 0.6rem;
+  }
+
+  .page-subtitle,
+  .section-intro,
+  .project-lead {
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .project-head {
+    margin-bottom: 2.5rem;
+    max-width: 780px;
+  }
+
+  .project-head h2 {
+    margin: 0.6rem 0;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+  }
+
+  .section-title {
+    margin: 2.5rem 0 0.8rem;
+  }
+
+  .section-intro {
+    max-width: 720px;
+    margin-bottom: 1.4rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+
+  .card h4 {
+    margin: 0 0 0.5rem;
+  }
+
+  .card p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .architecture-diagram {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+  }
+
+  .dashboard-frame {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    height: 80vh;
+    min-height: 480px;
+  }
+
+  .dashboard-frame iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #fff;
+  }
+
+  .dashboard-fallback {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .page-container {
+      padding-top: 2rem;
+    }
+  }
+</style>
