@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const DASHBOARD_URL = 'https://pms-price-engine.duckdns.org';
+const DEMO_URL = 'https://pms-price-engine.duckdns.org/#demo';
 const GITHUB_URL = 'https://github.com/moradabaz/pms-price-engine';
 
 const HIGHLIGHTS = [
@@ -11,7 +11,7 @@ const HIGHLIGHTS = [
   },
   {
     title: 'Exactly-once checkpointing',
-    body: 'Incremental RocksDB state, checkpoints persisted to S3 every 60s. The panel below reads the real state of the latest checkpoint via the Flink REST API.',
+    body: 'Incremental RocksDB state, checkpoints persisted to S3 every 60s. The live dashboard reads the real state of the latest checkpoint via the Flink REST API.',
   },
   {
     title: 'Keyed state with a computed TTL',
@@ -56,7 +56,7 @@ const HIGHLIGHTS = [
           pipeline designed spec-first with ADRs and live auditing.
         </p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="#demo">See the live demo</a>
+          <a class="btn btn-primary" href={DEMO_URL} target="_blank" rel="noopener noreferrer">See the live demo</a>
           <a class="btn btn-secondary" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">Code on GitHub</a>
         </div>
       </div>
@@ -84,19 +84,6 @@ const HIGHLIGHTS = [
         loading="lazy"
       />
 
-      <h3 class="section-title" id="demo">Live dashboard</h3>
-      <p class="section-intro">
-        The "Market Pulse Job" panel shows the real state of the Flink job (status, latest
-        checkpoint) plus the 5-minute windowed metrics, read live from DynamoDB.
-      </p>
-      <div class="dashboard-frame">
-        <iframe src={DASHBOARD_URL} title="PMS Price Engine - Streamlit dashboard" loading="lazy"></iframe>
-      </div>
-      <p class="dashboard-fallback">
-        Not loading? The demo server is switched on on demand before each interview, reach
-        out and I'll start it, or check the code directly on
-        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>.
-      </p>
     </article>
   </div>
 </BaseLayout>
@@ -174,27 +161,6 @@ const HIGHLIGHTS = [
     height: auto;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
-  }
-
-  .dashboard-frame {
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    height: 80vh;
-    min-height: 480px;
-  }
-
-  .dashboard-frame iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-    background: #fff;
-  }
-
-  .dashboard-fallback {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-top: 1rem;
   }
 
   @media (max-width: 640px) {
