@@ -6,28 +6,142 @@ const GITHUB_URL = 'https://github.com/moradabaz/pms-price-engine';
 
 const HIGHLIGHTS = [
   {
+    id: 'watermarks',
     title: 'Watermarks and event time',
     body: 'with_idleness for a single-partition source, the minimum rule across sources, allowed lateness with a side output for late data instead of silently dropping it.',
+    detail: [
+      {
+        heading: 'The setup',
+        text: 'The Market Pulse job aggregates in 5-minute tumbling windows on event time, not processing time: bookings by created_at and market prices by collected_at. The watermark is bounded out-of-orderness of 30 seconds, because Kafka gives no ordering guarantee across different apartments or segments.',
+      },
+      {
+        heading: 'The minimum rule',
+        text: 'An operator with several inputs takes the minimum watermark of all of them. It is deliberately conservative, since closing a window early would drop a late event that belonged to it. The price is that one input that stops advancing freezes every window of every key.',
+      },
+      {
+        heading: 'Two causes, two fixes',
+        text: 'booking-events.v1 has a single Kafka partition while the job runs with parallelism 4, so three subtasks never receive a single event and pin the watermark from the first second. Wrapping that in with_idleness would hide it, so the fix is parallelism 1 on that source. A real quiet period is a different problem, and there with_idleness(60s) applies, which is 2x the longest gap the generator can produce (30s). The market source has 4 partitions and a deterministic 60s tick, so it gets with_idleness(120s) with no structural fix needed. Both thresholds are settings, because a real booking source will not behave like the mock.',
+      },
+      {
+        heading: 'Late data',
+        text: 'Allowed lateness is 1 minute: a record inside it updates and re-emits the window. Anything later goes to a late-data side output that is logged, never silently dropped.',
+      },
+      {
+        heading: 'Rejected',
+        text: 'Applying the same idleness to both sources "just in case" would have patched the symptom on one of them and guessed the number on both.',
+      },
+    ],
   },
   {
+    id: 'checkpointing',
     title: 'Exactly-once checkpointing',
     body: 'Incremental RocksDB state, checkpoints persisted to S3 every 60s. The live dashboard reads the real state of the latest checkpoint via the Flink REST API.',
+    detail: [
+      {
+        heading: 'How it works',
+        text: 'Flink injects a checkpoint barrier at the sources and each stateful operator snapshots its state as the barrier passes. When every operator has confirmed, the checkpoint is complete and becomes the recovery point. That is what gives EXACTLY_ONCE: operator state reflects every input record once, consistently across the whole pipeline.',
+      },
+      {
+        heading: 'RocksDB plus S3',
+        text: 'RocksDB is the fast working copy on the TaskManager local disk, so state size is bounded by disk instead of RAM. S3 is the durable copy, and checkpoints are incremental, so only the SST files that changed are uploaded. The reads that RocksDB adds are cheap here: the workload is mostly writes, access is by exact key, hot blocks sit in the block cache and there is no network hop.',
+      },
+      {
+        heading: 'Tested by killing it',
+        text: 'I killed a TaskManager with SIGKILL during a live run. The job restored from the last checkpoint in a few seconds, the checkpoint id kept climbing from 29 to 46, and the state stayed around 770 KB. At baseline the state was 770 KB but only 616 KB was uploaded, which is the incremental checkpoint at work.',
+      },
+      {
+        heading: 'What the test taught me',
+        text: 'A job restart does not restart the TaskManager. Flink only recovers the job, and bringing the process back is the job of the infrastructure layer (Kubernetes, YARN or a restart policy). One TaskManager had been dead for about 37 minutes before I noticed, only because I was polling by hand. A checkpoint id that stops advancing is the early signal, which is what the Job health panel reads from /jobs/{id}/checkpoints, and a real deployment would alert on it.',
+      },
+    ],
   },
   {
+    id: 'keyed-state',
     title: 'Keyed state with a computed TTL',
     body: 'Deduplication with ValueState[bool] per booking_id, TTL = window size plus allowed lateness, not an arbitrary number.',
+    detail: [
+      {
+        heading: 'Why state at all',
+        text: 'Debezium and Kafka can redeliver a record, for example after a restart from a checkpoint, and a duplicated booking would be summed twice inside a window. Writing the same result twice to DynamoDB is harmless because of the overwrite, but double-counting an input inside the aggregation is not, since the wrong total would be written perfectly idempotently.',
+      },
+      {
+        heading: 'The mechanism',
+        text: 'A KeyedProcessFunction before the windows keeps a ValueState[bool] per booking_id. Unlike a window, keyed state has no automatic lifecycle: nothing cleans it up, so without a TTL every booking id ever seen would grow in RocksDB forever. Cancellations use their own independent state.',
+      },
+      {
+        heading: 'Where the TTL comes from',
+        text: 'There are two replay cases. A same-day redelivery or job restart carries a recent timestamp, still inside the window, so it truly needs dedup. A full Debezium resnapshot carries rows that are weeks old, and the window discards them as late data before dedup state is ever consulted. So the TTL only has to cover the first case: window size (5 min) plus allowed lateness (1 min) = 6 minutes.',
+      },
+      {
+        heading: 'Rejected',
+        text: 'Checking updated_at IS NULL fails exactly on the resnapshot it has to survive, because a row that was never updated looks like a new insert. A TTL of weeks pays for unbounded state to protect a case the window already handles for free. Relying on the sink overwrite does not stop a duplicate being summed upstream.',
+      },
+    ],
   },
   {
+    id: 'async-io',
     title: 'Async I/O enrichment',
     body: 'AsyncDataStream.unordered_wait against price_decision to attach margin/profit without blocking the main pipeline.',
+    detail: [
+      {
+        heading: 'The goal',
+        text: 'The average profit per booking needs the cost context that the pricing job already wrote to the price_decision table in DynamoDB. Each confirmed booking triggers a point lookup by apartment_id and check-in date, and the profit is revenue * (1 - p) - total cost, using the fields stored in that decision.',
+      },
+      {
+        heading: 'Why not a third CDC bridge',
+        text: 'The usual pattern in the project was a keyed join fed by another bridge service and topic. For a value with a stable key in a store that is already queryable, that would be a third service and a third topic for one lookup. Async I/O is also a Flink capability the pricing job never used, and this phase was designed to learn windows and Async I/O.',
+      },
+      {
+        heading: 'The trade-off, accepted on purpose',
+        text: 'Every booking now pays real I/O latency and depends on DynamoDB being available for the enrichment step. A keyed-state join would have no per-event I/O once warm. For a 5-minute analytics metric, one service fewer was worth more than the lookup latency, and AsyncDataStream timeout and retry cover the failures. unordered_wait is used because the window does not care about arrival order.',
+      },
+      {
+        heading: 'Missing data is not zero',
+        text: 'If no price_decision exists yet (a brand-new apartment or a date past the pricing horizon) the booking still counts in the booking count but is left out of the profit average, logged as a warning. A missing cost basis and a genuinely zero profit are different things, and mixing them would corrupt the average. The window also reports how many bookings were excluded.',
+      },
+    ],
   },
   {
+    id: 'spec-driven',
     title: 'Spec-driven development',
     body: 'Every phase has a spec, ADRs explaining the why behind each decision, and an audit diary of live verification, not just unit tests.',
+    detail: [
+      {
+        heading: 'Three kinds of document',
+        text: 'There are 26 phase specs written before the implementation, with acceptance criteria, non-goals and explicit design decisions. There are 18 ADRs, each one a single architectural decision with the alternatives that were rejected. And there is an audit diary, which records what was actually verified against the live stack and when. The spec says what was going to be built and the diary says what was proven.',
+      },
+      {
+        heading: 'Verified live, not assumed',
+        text: 'Acceptance criteria were run against the running stack, and that found real errors in the specs themselves. For example, the command drafted to inspect the replication slot failed because pgoutput emits binary output, so the spec had to switch to pg_logical_slot_get_binary_changes.',
+      },
+      {
+        heading: 'The lesson that repeated three times',
+        text: 'A green health check does not mean the data flows. The Debezium connector reported RUNNING while publishing zero messages because the topic name had silently diverged from the spec. Another time a single unresolvable heartbeat topic stalled the shared producer for every topic. A third time DynamoDB reported a stream ARN that no longer existed. Every control-plane check now has a data-plane check next to it, such as replication slot lag or consuming the topic, and each incident is written up with the situations where it can happen again.',
+      },
+    ],
   },
   {
+    id: 'cost',
     title: 'Cost discipline in architecture',
     body: 'Explicit decisions about what runs managed and what stays local (self-hosted Kafka/Flink vs. managed DynamoDB/S3/Kinesis) instead of defaulting everything to AWS.',
+    detail: [
+      {
+        heading: 'Storage and state in real AWS, compute local',
+        text: 'ADR-0010 puts S3, Kinesis, DynamoDB and the Glue catalog on real AWS, because that is where LocalStack differs from reality (IAM enforcement, Glue tier limits, DynamoDB Streams ARNs). Kafka, Debezium, Flink and Postgres stay in Docker Compose and talk to AWS by configuration alone.',
+      },
+      {
+        heading: 'A one-shot deployment',
+        text: 'terraform apply, run the demo, then terraform destroy straight away, confirmed with an empty state list. AWS Budget alerts at $5 and $10 must exist before the first apply, as a hard precondition.',
+      },
+      {
+        heading: 'Rejected',
+        text: 'Managed Kafka or managed Flink bill per node-hour even at the smallest tier and would burn a $5 to $10 budget in minutes. An always-on deployment has no uptime requirement to justify itself, and staying on LocalStack forever would leave the AWS learning goal untested.',
+      },
+      {
+        heading: 'The same reasoning in the other choices',
+        text: 'Kafka carries the Debezium payment events because it is Debezium native target, while market prices go straight to Kinesis, and a small bridge republishes them to Kafka because Flink 2.x has no Kinesis source. PyFlink was chosen over Java because the stack is Python, the learning goal is stream processing and not the JVM, and the volume is around 100 apartments. The ADR itself says to revisit it at higher throughput.',
+      },
+    ],
   },
 ];
 ---
@@ -62,12 +176,42 @@ const HIGHLIGHTS = [
       </div>
 
       <h3 class="section-title">What this project demonstrates</h3>
-      <div class="grid">
+      <p class="section-intro">Select any card to read how it was solved and why.</p>
+      <div class="grid" role="tablist" aria-label="Project highlights">
         {HIGHLIGHTS.map((item) => (
-          <div class="glass-card card">
+          <button
+            type="button"
+            class="glass-card card"
+            role="tab"
+            id={`tab-${item.id}`}
+            aria-selected="false"
+            aria-controls={`panel-${item.id}`}
+            data-target={item.id}
+          >
             <h4>{item.title}</h4>
             <p>{item.body}</p>
-          </div>
+            <span class="card-more">Read the explanation <span aria-hidden="true">↓</span></span>
+          </button>
+        ))}
+      </div>
+
+      <div class="detail-area" id="highlight-detail">
+        {HIGHLIGHTS.map((item) => (
+          <section
+            class="detail-panel"
+            role="tabpanel"
+            id={`panel-${item.id}`}
+            aria-labelledby={`tab-${item.id}`}
+            hidden
+          >
+            <h4 class="detail-title">{item.title}</h4>
+            {item.detail.map((d) => (
+              <div class="detail-block">
+                <h5>{d.heading}</h5>
+                <p>{d.text}</p>
+              </div>
+            ))}
+          </section>
         ))}
       </div>
 
@@ -87,6 +231,35 @@ const HIGHLIGHTS = [
     </article>
   </div>
 </BaseLayout>
+
+<script>
+  const cards = document.querySelectorAll<HTMLButtonElement>('.card[data-target]');
+  const panels = document.querySelectorAll<HTMLElement>('.detail-panel');
+
+  function select(id: string | null) {
+    cards.forEach((c) => {
+      const on = c.dataset.target === id;
+      c.setAttribute('aria-selected', String(on));
+      c.classList.toggle('active', on);
+    });
+    panels.forEach((p) => {
+      p.hidden = p.id !== `panel-${id}`;
+    });
+  }
+
+  cards.forEach((card) => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.target ?? null;
+      const open = card.getAttribute('aria-selected') === 'true';
+      select(open ? null : id);
+      if (!open) {
+        document
+          .getElementById('highlight-detail')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  });
+</script>
 
 <style>
   .page-container {
@@ -143,6 +316,71 @@ const HIGHLIGHTS = [
 
   .card {
     padding: 1.25rem;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card.active {
+    border-color: var(--accent-blue);
+    box-shadow: var(--shadow-hover);
+  }
+
+  .card:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+  }
+
+  .card-more {
+    margin-top: auto;
+    padding-top: 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--accent-blue);
+  }
+
+  .detail-area {
+    margin-top: 1.2rem;
+  }
+
+  .detail-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--accent-blue);
+    border-radius: var(--radius-md);
+    padding: 1.5rem 1.6rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .detail-panel[hidden] {
+    display: none;
+  }
+
+  .detail-title {
+    margin: 0 0 1rem;
+    font-size: 1.15rem;
+  }
+
+  .detail-block + .detail-block {
+    margin-top: 1rem;
+  }
+
+  .detail-block h5 {
+    margin: 0 0 0.3rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-indigo);
+  }
+
+  .detail-block p {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.7;
+    font-size: 0.95rem;
   }
 
   .card h4 {
