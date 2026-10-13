@@ -175,6 +175,19 @@ const HIGHLIGHTS = [
         </div>
       </div>
 
+      <h3 class="section-title">Architecture</h3>
+      <p class="section-intro">
+        CDC from Postgres via Debezium, two independent PyFlink jobs on the same cluster
+        (pricing and Market Pulse), DynamoDB as the hot path, and Apache Iceberg as the cold
+        path, transformed with dbt.
+      </p>
+      <img
+        src="/projects/pms-price-engine-architecture.png"
+        alt="PMS Price Engine architecture diagram"
+        class="architecture-diagram"
+        loading="lazy"
+      />
+
       <h3 class="section-title">What this project demonstrates</h3>
       <p class="section-intro">Select any card to read how it was solved and why.</p>
       <div class="grid" role="tablist" aria-label="Project highlights">
@@ -214,19 +227,6 @@ const HIGHLIGHTS = [
           </section>
         ))}
       </div>
-
-      <h3 class="section-title">Architecture</h3>
-      <p class="section-intro">
-        CDC from Postgres via Debezium, two independent PyFlink jobs on the same cluster
-        (pricing and Market Pulse), DynamoDB as the hot path, and Apache Iceberg as the cold
-        path, transformed with dbt.
-      </p>
-      <img
-        src="/projects/pms-price-engine-architecture.png"
-        alt="PMS Price Engine architecture diagram"
-        class="architecture-diagram"
-        loading="lazy"
-      />
 
     </article>
   </div>
