@@ -235,7 +235,7 @@ const HIGHLIGHTS = [
 
   const dialog = document.getElementById('diagram-dialog') as HTMLDialogElement | null;
   const frame = document.getElementById('diagram-frame') as HTMLIFrameElement | null;
-  const DIAGRAM_SRC = '/projects/pms-price-engine-architecture.html?embed=1';
+  const DIAGRAM_SRC = '/projects/pms-price-engine-architecture.html';
 
   document.getElementById('diagram-open')?.addEventListener('click', () => {
     if (frame && !frame.getAttribute('src')) frame.setAttribute('src', DIAGRAM_SRC);
@@ -422,6 +422,10 @@ const HIGHLIGHTS = [
   }
 
   .diagram-dialog {
+    /* global.css resets margin to 0, which defeats the UA centering of a modal dialog */
+    position: fixed;
+    inset: 0;
+    margin: auto;
     width: min(96vw, 1600px);
     height: 92vh;
     max-width: none;
@@ -436,6 +440,10 @@ const HIGHLIGHTS = [
   .diagram-dialog[open] {
     display: flex;
     flex-direction: column;
+  }
+
+  :global(body:has(.diagram-dialog[open])) {
+    overflow: hidden;
   }
 
   .diagram-dialog::backdrop {
