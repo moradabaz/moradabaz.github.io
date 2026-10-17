@@ -181,53 +181,26 @@ const HIGHLIGHTS = [
         (pricing and Market Pulse), DynamoDB as the hot path, and Apache Iceberg as the cold
         path, transformed with dbt.
       </p>
-      <img
-        src="/projects/pms-price-engine-architecture.png"
-        alt="PMS Price Engine architecture diagram"
-        class="architecture-diagram"
-        loading="lazy"
-      />
+      <button type="button" class="diagram-trigger" id="diagram-open" aria-haspopup="dialog">
+        <img
+          src="/projects/pms-price-engine-architecture.png"
+          alt="PMS Price Engine architecture diagram"
+          class="architecture-diagram"
+          loading="lazy"
+        />
+        <span class="diagram-hint">Click to explore the interactive diagram</span>
+      </button>
 
-      <h3 class="section-title">What this project demonstrates</h3>
-      <p class="section-intro">Select any card to read how it was solved and why.</p>
-      <div class="grid" role="tablist" aria-label="Project highlights">
-        {HIGHLIGHTS.map((item) => (
-          <button
-            type="button"
-            class="glass-card card"
-            role="tab"
-            id={`tab-${item.id}`}
-            aria-selected="false"
-            aria-controls={`panel-${item.id}`}
-            data-target={item.id}
-          >
-            <h4>{item.title}</h4>
-            <p>{item.body}</p>
-            <span class="card-more">Read the explanation <span aria-hidden="true">↓</span></span>
-          </button>
-        ))}
-      </div>
-
-      <div class="detail-area" id="highlight-detail">
-        {HIGHLIGHTS.map((item) => (
-          <section
-            class="detail-panel"
-            role="tabpanel"
-            id={`panel-${item.id}`}
-            aria-labelledby={`tab-${item.id}`}
-            hidden
-          >
-            <h4 class="detail-title">{item.title}</h4>
-            {item.detail.map((d) => (
-              <div class="detail-block">
-                <h5>{d.heading}</h5>
-                <p>{d.text}</p>
-              </div>
-            ))}
-          </section>
-        ))}
-      </div>
-
+      <dialog class="diagram-dialog" id="diagram-dialog" aria-label="Interactive architecture diagram">
+        <div class="diagram-bar">
+          <span>PMS Price Engine · Architecture</span>
+          <div class="diagram-actions">
+            <a href="/projects/pms-price-engine-architecture.html" target="_blank" rel="noopener noreferrer">Open in new tab ↗</a>
+            <button type="button" id="diagram-close" aria-label="Close diagram">Close ✕</button>
+          </div>
+        </div>
+        <iframe id="diagram-frame" title="PMS Price Engine interactive architecture diagram"></iframe>
+      </dialog>
     </article>
   </div>
 </BaseLayout>
@@ -258,6 +231,19 @@ const HIGHLIGHTS = [
           ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     });
+  });
+
+  const dialog = document.getElementById('diagram-dialog') as HTMLDialogElement | null;
+  const frame = document.getElementById('diagram-frame') as HTMLIFrameElement | null;
+  const DIAGRAM_SRC = '/projects/pms-price-engine-architecture.html?embed=1';
+
+  document.getElementById('diagram-open')?.addEventListener('click', () => {
+    if (frame && !frame.getAttribute('src')) frame.setAttribute('src', DIAGRAM_SRC);
+    dialog?.showModal();
+  });
+  document.getElementById('diagram-close')?.addEventListener('click', () => dialog?.close());
+  dialog?.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
   });
 </script>
 
@@ -394,11 +380,106 @@ const HIGHLIGHTS = [
     line-height: 1.6;
   }
 
+  .diagram-trigger {
+    display: block;
+    position: relative;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+  }
+
   .architecture-diagram {
+    display: block;
     width: 100%;
     height: auto;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
+    transition: box-shadow 0.15s ease;
+  }
+
+  .diagram-trigger:hover .architecture-diagram,
+  .diagram-trigger:focus-visible .architecture-diagram {
+    box-shadow: var(--shadow-hover);
+  }
+
+  .diagram-trigger:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 3px;
+    border-radius: var(--radius-md);
+  }
+
+  .diagram-hint {
+    position: absolute;
+    right: 0.8rem;
+    bottom: 0.8rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    background: rgba(15, 23, 42, 0.85);
+    color: #fff;
+    font-size: 0.8rem;
+  }
+
+  .diagram-dialog {
+    width: min(96vw, 1600px);
+    height: 92vh;
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-card);
+  }
+
+  .diagram-dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .diagram-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.7);
+  }
+
+  .diagram-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .diagram-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .diagram-actions a {
+    color: var(--accent-blue);
+    font-size: 0.85rem;
+  }
+
+  .diagram-actions button {
+    border: 1px solid var(--border-color);
+    background: var(--bg-subtle);
+    color: var(--text-main);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.7rem;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .diagram-dialog iframe {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    background: #fff;
   }
 
   @media (max-width: 640px) {
